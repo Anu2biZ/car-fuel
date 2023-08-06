@@ -7,9 +7,39 @@
       @change="handleFileUpload"
       accept=".xlsx, .xls"
     />
-    <div class="button-upload" @click="openFileInput">Загрузить Excel</div>
-    <div class="button-download" @click="downloadImages" >Скачать все</div>
-    <img src="/loader.gif" alt="" class="loader" v-if="loader">
+    <div
+      class="button-upload"
+      @click="openFileInput"
+      v-if="dataArray.length === 0"
+    >
+      Загрузить Excel
+    </div>
+    <div
+      class="button-reset"
+      @click="
+        dataArray = [];
+        this.$refs.fileInput.value = null;
+        this.logs = [];
+      "
+      v-if="dataArray.length > 0"
+    >
+      Сбросить файл
+    </div>
+    <div
+      class="button-download"
+      @click="downloadImages"
+      v-if="dataArray.length > 0"
+    >
+      Скачать все
+    </div>
+    <img src="/loader.gif" alt="" class="loader" v-if="loader" />
+  </div>
+
+  <div class="logs" v-if="dataArray.length > 0">
+    <h2>Логи / прогресс...</h2>
+      <div v-for="(item, i) in logs" :key="i">
+        Обработка {{ item }}
+      </div>
   </div>
 
   <div class="chart-wrap">
@@ -60,7 +90,7 @@
       <div
         class="chart chart-accomp"
         :style="{
-          '--progress': item[5].toFixed(2) + '%',
+          '--progress': item[6].toFixed(2) + '%',
           '--color': '#ff006e',
           '--border-width': '20px',
         }"
@@ -87,13 +117,14 @@
 <script>
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
-import * as htmlToImage from 'html-to-image';
+import * as htmlToImage from "html-to-image";
 
 export default {
   data() {
     return {
+      logs: [],
       dataArray: [],
-      loader: false
+      loader: false,
     };
   },
   methods: {
@@ -131,6 +162,7 @@ export default {
 
         const promise = htmlToImage.toPng(divBlock).then((dataUrl) => {
           const blob = this.dataURLtoBlob(dataUrl);
+          this.logs.push(this.dataArray[i][0]);
           return { filename: `image_${this.dataArray[i][0]}.png`, blob };
         });
 
@@ -142,17 +174,17 @@ export default {
           zip.file(result.filename, result.blob);
         });
 
-        zip.generateAsync({ type: 'blob' }).then((content) => {
-          const downloadLink = document.createElement('a');
+        zip.generateAsync({ type: "blob" }).then((content) => {
+          const downloadLink = document.createElement("a");
           downloadLink.href = URL.createObjectURL(content);
-          downloadLink.download = 'images.zip';
+          downloadLink.download = "images.zip";
           downloadLink.click();
           this.loader = false;
         });
       });
     },
     dataURLtoBlob(dataURL) {
-      const arr = dataURL.split(',');
+      const arr = dataURL.split(",");
       const mime = arr[0].match(/:(.*?);/)[1];
       const bstr = atob(arr[1]);
       let n = bstr.length;
@@ -403,10 +435,11 @@ export default {
 
 .panel {
   display: flex;
+  margin-top: 16px;
   align-items: center;
 
   .button-upload {
-    margin: 16px;
+    margin: 0 16px 0 0;
     border-radius: 10px;
     max-width: 200px;
     display: flex;
@@ -428,6 +461,19 @@ export default {
     color: #fff;
     padding: 10px 20px;
     cursor: pointer;
+  }
+
+  .button-reset {
+    border-radius: 10px;
+    max-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: red;
+    color: #fff;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-right: 16px;
   }
 }
 
